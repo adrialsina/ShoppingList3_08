@@ -16,6 +16,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -24,6 +25,8 @@ import java.util.ArrayList;
 public class ShoppingListActivity extends AppCompatActivity {
 
     private static final String FILENAME = "shopping_list.txt";
+    private static final int MAX_BYTES =  8000;
+
     private ArrayList<ShoppingItem> itemList;
     private ShoppingListAdapter adapter;
 
@@ -40,12 +43,33 @@ public class ShoppingListActivity extends AppCompatActivity {
                 fos.write(line.getBytes());
             }
             fos.close();
+        } catch (FileNotFoundException e){
+            Log.e("adria", "writeItemList: FileNotFoundException");
+            Toast.makeText(this, R.string.cannot_write, Toast.LENGTH_SHORT).show();
+        } catch(IOException e){
+            Log.e("adria", "writeItemList: IOException");
+            Toast.makeText(this, R.string.cannot_write, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void readItemList(){
+        itemList = new ArrayList<>();
+        try{
+            FileInputStream fis = openFileInput(FILENAME);
+            byte[] buffer = new byte[MAX_BYTES];
+            int nread = fis.read(buffer);
+            String content = new String(buffer, 0, nread);
+            String[] lines = content.split("\n");
+            for (String line : lines) {
+                String[] parts = line.split(";");
+                itemList.add(new ShoppingItem(parts[0], parts[1].equals("true")));
+            }
+            fis.close();
         }catch (FileNotFoundException e){
-            Log.e("adria", "writeItemList: FileNotFoundException");
-            Toast.makeText(this, R.string.cannot_write, Toast.LENGTH_SHORT).show();
-        }catch(IOException e){
-            Log.e("adria", "writeItemList: FileNotFoundException");
-            Toast.makeText(this, R.string.cannot_write, Toast.LENGTH_SHORT).show();
+            Log.i("adria", "readItemList: FileNotFoundException");
+        } catch (IOException e) {
+            Log.e("adria", "readItemList: IOException");
+            Toast.makeText(this, R.string.cannot_read, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -64,10 +88,7 @@ public class ShoppingListActivity extends AppCompatActivity {
         btn_add = (Button) findViewById(R.id.btn_add);
         edit_item = (EditText) findViewById(R.id.edit_item);
 
-        itemList = new ArrayList<>();
-        itemList.add(new ShoppingItem("Gelat", true));
-        itemList.add(new ShoppingItem("Galetes"));
-        itemList.add(new ShoppingItem("Pa"));
+        readItemList();
 
         adapter = new ShoppingListAdapter(
                 this,
